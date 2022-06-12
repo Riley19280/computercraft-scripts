@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # Computercraft Scripts
-=======
-# Computercraf Scripts
->>>>>>> 9ca62cd372d2b530a52150ee3cf6ccd1a429dbba
 Collection of scripts for Computercraft turtles in Minecraft
 
 ### Clone Path 
