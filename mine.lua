@@ -77,7 +77,7 @@ for d = 1,distance,2 do
 	util.detectDig()
     turtle.forward()
 	
-	if isInventoryFull() then 
+	if util.isInventoryFull() then 
 		dumpInventory()
 	end
 	

@@ -40,6 +40,10 @@ end
 
 
 function util.placeBlock(blockName, direction)
+	if not blockName then
+		error("No blockName given to place")
+	end
+
 	local slot = util.findItemInInventory(blockName)
 	
 	if not slot then
@@ -87,9 +91,27 @@ function util.isInventoryFull()
 	return true
 end
 
+function util.tprint (tbl, indent)
+	if not indent then indent = 0 end
+	for k, v in pairs(tbl) do
+		formatting = string.rep("  ", indent) .. k .. ": "
+	  if type(v) == "table" then
+		print(formatting)
+		util.tprint(v, indent+1)
+	  elseif type(v) == 'boolean' then
+		print(formatting .. tostring(v))
+	  else
+		print(formatting .. v)
+	  end
+	end
+  end
+
+
+function util.manhattanDistance(x1, y1, x2, y2)
+	return math.abs(x2 - x1) + math.abs(y2 - y1)
+end
 
 return util
-
 
 
 

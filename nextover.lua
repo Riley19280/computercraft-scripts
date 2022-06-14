@@ -1,5 +1,5 @@
 
-local turtleCount=17
+local turtleCount=16
 
 local sleepDuration = .5
 

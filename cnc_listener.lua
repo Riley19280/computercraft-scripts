@@ -35,8 +35,6 @@ while true do
 		
 		local fn = loadstring(cmd)
 		
-		fn()
-		
 		if fn then 
 			if not pcall(fn) then
 				print('encountered error')
