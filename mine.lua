@@ -1,4 +1,5 @@
-util = require('util')
+require('turtleUtil')
+
 local args = {...}
 local distance = args[1]
 local height = args[2] or 3
@@ -8,14 +9,14 @@ local fillerBlock = "minecraft:netherrack"
 
 
 function dumpInventory() 
-	local chest = util.findItemInInventory(chestName)
+	local chest = turtle.findItem(chestName)
 	
 	if not chest then 
 		print("No chest found to dump inventory")
 		return
 	end
 
-	util.detectDigUp()
+	turtle.detectDigUp()
 	turtle.select(chest)
 	turtle.placeUp()
 	
@@ -40,14 +41,14 @@ end
 
 function placeCeiling()
 	if not turtle.detectUp() then 
-		util.placeBlockUp(fillerBlock)
+		turtle.placeBlockUp(fillerBlock)
 	end
 end
 
 
 function placeFloor() 
 	if not turtle.detectDown() then 
-		util.placeBlockDown(fillerBlock)
+		turtle.placeBlockDown(fillerBlock)
 	end
 end
 
@@ -56,28 +57,28 @@ for d = 1,distance,2 do
 	placeFloor()
 
 	for h = 1, height,1 do
-		util.detectDigUp()
+		turtle.detectDigUp()
 		turtle.up()
 	end
    
 	placeCeiling()
 	
-	util.detectDig()
+	turtle.detectDig()
     turtle.forward()
 	
 	placeCeiling()
 	
 	for h = 1, height,1 do
-		util.detectDigDown()
+		turtle.detectDigDown()
 		turtle.down()
 	end
 	
 	placeFloor()
 
-	util.detectDig()
+	turtle.detectDig()
     turtle.forward()
 	
-	if util.isInventoryFull() then 
+	if turtle.isInventoryFull() then 
 		dumpInventory()
 	end
 	
@@ -86,7 +87,7 @@ end
 turtle.turnLeft()
 turtle.turnLeft()
 for d = 1,distance,1 do
-	util.detectDig()
+	turtle.detectDig()
 	turtle.forward();
 end
 turtle.turnLeft()

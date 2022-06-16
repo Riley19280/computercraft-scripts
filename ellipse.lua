@@ -1,17 +1,33 @@
 --https://www.redblobgames.com/grids/circle-drawing/
 --https://donatstudios.com/PixelCircleGenerator
 --https://github.com/donatj/Circle-Generator/blob/master/generator.js
+require('turtleUtil')
 lcs = require('local_coordinate_system')
 util = require('util')
+
 
 lcs.loadNative()
 
 local args = {...}
 
-local radiusX = tonumber(args[1])
-local radiusY = tonumber(args[2])
+if not args[1] or not args[2] then
+    error('X and Y required')
+    return
+end
 
-local thickness = args[3] or 'thin'
+local radiusX = tonumber(args[1]) / 2
+local radiusY = tonumber(args[2]) / 2
+
+local height = tonumber(args[3]) or 1
+
+local thickness = 'thin'
+
+if tonumber(args[3]) ~= nil then
+    height = args[3]
+    thickness = args[4] or 'thin'
+else
+    thickness = args[3] or 'thin'
+end
 
 local ratio = radiusX / radiusY;
 
@@ -54,7 +70,7 @@ function fatfilled(x, y, radius, ratio)
     )
 end
 
-local points = {}
+local circlePoints = {}
 
 for y = -maxblocks_y / 2 + 1, maxblocks_y / 2 - 1, 1 do
     for x = -maxblocks_x / 2 + 1, maxblocks_x / 2 - 1, 1 do
@@ -78,47 +94,31 @@ for y = -maxblocks_y / 2 + 1, maxblocks_y / 2 - 1, 1 do
         end
 
         if xfilled then 
-            table.insert(points, {math.floor(x), math.floor(y)})
+            table.insert(circlePoints, {math.floor(x), math.floor(y)})
         end
 
     end
 end
   
-    
-function compare(a, b)
+function closestBlock(a, b)
     return util.manhattanDistance(a[1], a[2], lcs.position.x, lcs.position.z) < util.manhattanDistance(b[1], b[2], lcs.position.x, lcs.position.z)
 end
 
-table.sort(points, compare)
+for h = 0, height - 1, 1 do
+    local pointsToVisit = util.clone_table(circlePoints)
+
+    table.sort(pointsToVisit, closestBlock)
 
 
-local currentPoint = table.remove(points, 1)
-
-while currentPoint ~= nil do
-    -- util.tprint(lcs.position)
-    -- util.tprint(currentPoint)
+    local currentPoint = table.remove(pointsToVisit, 1)
     
-    -- shell.run('clear')
-    -- print( lcs.position.x,  lcs.position.y, 'to', currentPoint[1], currentPoint[2], 'dist',  math.abs(currentPoint[1] - lcs.position.x) + math.abs(currentPoint[2] - lcs.position.y))
-    -- print('---------')
-    -- for k,v in ipairs(points) do
-    --     print( lcs.position.x,  lcs.position.y, 'to', v[1], v[2], 'dist',  math.abs(v[1] - lcs.position.x) + math.abs(v[2] - lcs.position.y))
-    -- end
-    -- read()
-
-    -- print('moving distance ' .. tostring(util.manhattanDistance(currentPoint[1], currentPoint[2], lcs.position.x, lcs.position.z)), 'to point', currentPoint[1], currentPoint[2], 'from')
-    -- util.tprint(lcs.position)
-    -- read()
-    lcs.moveTo(currentPoint[1], 0, currentPoint[2])
-    turtle.placeUp()
-
-    table.sort(points, compare)
-    currentPoint = table.remove(points, 1)
+    while currentPoint ~= nil do
+        lcs.moveTo(currentPoint[1], h + 1, currentPoint[2])
+        turtle.placeDown()
+    
+        table.sort(pointsToVisit, closestBlock)
+        currentPoint = table.remove(pointsToVisit, 1)
+    end
 end
 
--- for k,v in ipairs(points) do
---     -- print(v[1], v[2])
-  
--- end
-
-lcs.returnOrigin()
+lcs.returnOrigin('xzy')

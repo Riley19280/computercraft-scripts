@@ -135,8 +135,8 @@ function lcs.forceMove(dir, dist)
     end
 end
  
-function lcs.returnOrigin()
-    local res = lcs.moveTo(0, 0, 0) 
+function lcs.returnOrigin(order)
+    local res = lcs.moveTo(0, 0, 0, order) 
     lcs.setDirection('forward')
     return res
 end
@@ -152,7 +152,7 @@ function lcs.moveToPosition(xyz, order)
 end
 
 function lcs.moveTo(x, y, z, order)
-    if not order then order = 'yxz' end
+    if not order then order = 'xzy' end
 
     order:gsub(".", function(c)
         if c == 'x' then lcs.moveToX(x) end

@@ -1,4 +1,4 @@
-util = require('util')
+require('turtleUtil')
 
 local args = {...}
 
@@ -17,10 +17,10 @@ function vertical(length, height)
         if x % 2 == 1 then
             for y = 1, height, 1 do
                 if not turtle.detect() then
-                    util.placeBlock(fillerBlock)
+                    turtle.placeBlock(fillerBlock)
                 end
                 if y ~= tonumber(height) then
-                    util.detectDigUp()
+                    turtle.detectDigUp()
                     turtle.up()
                 end
             end
@@ -29,10 +29,10 @@ function vertical(length, height)
         if x % 2 == 0 then
             for y = 1, height, 1 do
                 if not turtle.detect() then
-                    util.placeBlock(fillerBlock)
+                    turtle.placeBlock(fillerBlock)
                 end
                 if y ~= tonumber(height) then
-                    util.detectDigDown()
+                    turtle.detectDigDown()
                     turtle.down()
                 end
             end
@@ -41,7 +41,7 @@ function vertical(length, height)
         -- move to the next row or point back home
         if x ~= length then
             turtle.turnRight()
-            util.detectDig()
+            turtle.detectDig()
             turtle.forward()
             turtle.turnLeft()
         else
@@ -57,7 +57,7 @@ function vertical(length, height)
     end
     
     for d = 1, length - 1, 1 do
-        util.detectDig()
+        turtle.detectDig()
         turtle.forward();
     end
     turtle.turnRight()
@@ -77,18 +77,18 @@ function horizontal(width, length, direction)
 
             if direction == 'up' then
                 if not turtle.detectUp() then 
-                    util.placeBlockUp(fillerBlock)
+                    turtle.placeBlockUp(fillerBlock)
                 end
             elseif direction == 'down' then
                 if not turtle.detectDown() then 
-                    util.placeBlockDown(fillerBlock)
+                    turtle.placeBlockDown(fillerBlock)
                 end
             else
                 error('Direction ' .. direction .. " is not valid")
             end
 
             
-            util.detectDig()
+            turtle.detectDig()
             if y ~= length then
                 turtle.forward()       
             end
@@ -97,13 +97,13 @@ function horizontal(width, length, direction)
         if x ~= width then
             if x % 2 == 1 then
                 turtle.turnRight()
-                util.detectDig()
+                turtle.detectDig()
                 turtle.forward()
                 turtle.turnRight()
             end
             if x % 2 == 0 then
                 turtle.turnLeft()
-                util.detectDig()
+                turtle.detectDig()
                 turtle.forward()
                 turtle.turnLeft()	
             end
@@ -113,7 +113,7 @@ function horizontal(width, length, direction)
                 turtle.turnRight()
                 turtle.turnRight()
                 for d = 1, length - 1, 1 do
-                    util.detectDig()
+                    turtle.detectDig()
                     turtle.forward();
                 end
             end
@@ -125,7 +125,7 @@ function horizontal(width, length, direction)
 
     turtle.turnRight()
     for d = 1, width - 1, 1 do
-        util.detectDig()
+        turtle.detectDig()
         turtle.forward();
     end
 

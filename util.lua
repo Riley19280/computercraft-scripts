@@ -1,95 +1,5 @@
 local util = {}
 
-function util.detectDigUp() 
-	while turtle.detectUp() do
-		turtle.digUp()
-	end
-end
-
-function util.detectDigDown() 
-	while turtle.detectDown() do
-		turtle.digDown()
-	end
-end
-
-function util.detectDig() 
-	while turtle.detect() do
-		turtle.dig()
-	end
-end
-
-function util.findItemInInventory(itemName) 
-	local prevSelection = turtle.getSelectedSlot()
-	
-	local currentItem = turtle.getItemDetail()
-	if currentItem and currentItem["name"] == itemName then
-		return prevSelection
-	end
-	
-	for i = 1, 16 do 
-		turtle.select(i)
-		local item = turtle.getItemDetail()
-		if item and item["name"] == itemName then
-			turtle.select(prevSelection)
-			return i
-		end
-	end
-	turtle.select(prevSelection)
-	return nil
-end
-
-
-function util.placeBlock(blockName, direction)
-	if not blockName then
-		error("No blockName given to place")
-	end
-
-	local slot = util.findItemInInventory(blockName)
-	
-	if not slot then
-		print("Block " .. blockName .. " not found in placeBlock")
-		return false
-	end
-	
-	turtle.select(slot)
-	
-	if direction == "up" then 
-		return turtle.placeUp()
-	elseif direction == "down" then 
-		return turtle.placeDown()
-	elseif direction == nil then
-		return turtle.place()
-	else
-		error("Place direction " .. direction .. " is not defined")
-	end
-end
-
-function util.placeBlockUp(blockName)
-	return util.placeBlock(blockName, "up")
-end
-
-function util.placeBlockDown(blockName)
-	return util.placeBlock(blockName, "down")
-end
-
-
-function util.isInventoryFull() 
-	local selected = turtle.getSelectedSlot()
-	
-	for i = 1, 16 do
-		turtle.select(i)
-		local item = turtle.getItemDetail()
-		
-		if item == nil then
-			turtle.select(selected)
-			return false
-		end
-	end
-
-
-	turtle.select(selected)
-	return true
-end
 
 function util.tprint (tbl, indent)
 	if not indent then indent = 0 end
@@ -110,6 +20,27 @@ function util.tprint (tbl, indent)
 function util.manhattanDistance(x1, y1, x2, y2)
 	return math.abs(x2 - x1) + math.abs(y2 - y1)
 end
+
+function util.table_has_value (table, value)
+    for index, val in ipairs(table) do
+        if value == val then
+            return true
+        end
+    end
+
+    return false
+end
+
+function util.clone_table(obj, seen)
+	if type(obj) ~= 'table' then return obj end
+	if seen and seen[obj] then return seen[obj] end
+	local s = seen or {}
+	local res = setmetatable({}, getmetatable(obj))
+	s[obj] = res
+	for k, v in pairs(obj) do res[util.clone_table(k, s)] = util.clone_table(v, s) end
+	return res
+end
+
 
 return util
 
