@@ -1,5 +1,5 @@
 
-local turtleCount=16
+local turtleCount=31
 
 local sleepDuration = .5
 
@@ -7,6 +7,8 @@ shell.run('cnc', 'turtle.turnLeft()')
 sleep(sleepDuration)
 for i=1,turtleCount, 1 do
 	shell.run('cnc', 'turtle.dig()')
+	sleep(sleepDuration)
+	shell.run('cnc', 'turtle.digUp()')
 	sleep(sleepDuration)
 	shell.run('cnc', 'turtle.forward()')
 	sleep(sleepDuration)

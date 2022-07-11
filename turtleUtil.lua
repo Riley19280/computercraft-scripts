@@ -53,7 +53,7 @@ function turtle.findRandomItem()
 	for i = 1, 16 do 
 		local item = turtle.getItemDetail(i)
 		if item and not util.table_has_value(turtle.findBlacklist, item["name"]) then
-			table.insert(items,i)
+			table.insert(items, i)
 		end
 	end
 

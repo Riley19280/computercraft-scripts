@@ -21,6 +21,10 @@ function util.manhattanDistance(x1, y1, x2, y2)
 	return math.abs(x2 - x1) + math.abs(y2 - y1)
 end
 
+function util.manhattanDistance3D(x1, y1, z1, x2, y2, z2)
+	return math.abs(x2 - x1) + math.abs(y2 - y1) + math.abs(z2 - z1)
+end
+
 function util.table_has_value (table, value)
     for index, val in ipairs(table) do
         if value == val then
@@ -40,7 +44,6 @@ function util.clone_table(obj, seen)
 	for k, v in pairs(obj) do res[util.clone_table(k, s)] = util.clone_table(v, s) end
 	return res
 end
-
 
 return util
 

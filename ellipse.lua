@@ -4,9 +4,12 @@
 require('turtleUtil')
 lcs = require('local_coordinate_system')
 util = require('util')
-
+buildLib = require('buildLib')
 
 lcs.loadNative()
+
+buildLib.interactiveOptions()
+
 
 local args = {...}
 
@@ -79,13 +82,12 @@ for y = -maxblocks_y / 2 + 1, maxblocks_y / 2 - 1, 1 do
         if thickness == 'thick' then
             xfilled = fatfilled(x, y, radiusX, ratio)
         elseif thickness == 'thin' then
-            local dx
-            local dy
-
-            if x > 0 then dx = 1 else dx = -1 end
-            if y > 0 then dy = 1 else dy = -1 end
-
-            xfilled = fatfilled(x, y, radiusX, ratio) and not (fatfilled(x + dx, y, radiusX, ratio) and fatfilled(x, y + dy, radiusX, ratio));
+            xfilled = filled(x, y, radiusX, ratio) and not (
+                filled(x + 1, y, radiusX, ratio) and
+                filled(x - 1, y, radiusX, ratio) and
+                filled(x, y + 1, radiusX, ratio) and
+                filled(x, y - 1, radiusX, ratio)
+            )
         elseif thickness == 'filled' then
             xfilled = filled(x, y, radiusX, ratio);
         else
@@ -104,6 +106,11 @@ function closestBlock(a, b)
     return util.manhattanDistance(a[1], a[2], lcs.position.x, lcs.position.z) < util.manhattanDistance(b[1], b[2], lcs.position.x, lcs.position.z)
 end
 
+function findBlockToPlace()
+    local block = buildLib.getSelection()
+    turtle.select(block)
+end
+
 for h = 0, height - 1, 1 do
     local pointsToVisit = util.clone_table(circlePoints)
 
@@ -114,6 +121,7 @@ for h = 0, height - 1, 1 do
     
     while currentPoint ~= nil do
         lcs.moveTo(currentPoint[1], h + 1, currentPoint[2])
+        findBlockToPlace()
         turtle.placeDown()
     
         table.sort(pointsToVisit, closestBlock)
