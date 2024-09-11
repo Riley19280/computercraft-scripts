@@ -5,7 +5,7 @@ local args = {...}
 local arg1 = args[1]
 
 
-local fillerBlock = "minecraft:netherrack"
+local fillerBlock = "minecraft:cut_sandstone"
 
 function vertical(length, height)
     if not length or not height then

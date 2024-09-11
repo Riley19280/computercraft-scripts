@@ -2,6 +2,7 @@
 
 lcs.position  = {x = 0, y = 0, z = 0}
 lcs.direction = 0
+lcs.forceMoves = false
 
 function lcs.turnLeft()
     if lcs.isNative() then
@@ -134,6 +135,8 @@ function lcs.forceMove(dir, dist)
         end
     end
 end
+
+
  
 function lcs.returnOrigin(order)
     local res = lcs.moveTo(0, 0, 0, order) 
@@ -164,13 +167,25 @@ end
 function lcs.moveToY(y)
     while (y > lcs.position.y) do
         while lcs.up() == false do
-            return false
-        end
+            if lcs.forceMoves then
+                 while turtle.detectUp() do
+                     turtle.digUp()
+                 end
+             else
+                 return false
+            end 
+         end
     end
     while (y < lcs.position.y) do
         while lcs.down() == false do
-            return false
-        end
+            if lcs.forceMoves then
+                 while turtle.detectDown() do
+                     turtle.digDown()
+                 end
+             else
+                 return false
+            end 
+         end
     end
 end
  
@@ -179,15 +194,27 @@ function lcs.moveToX(x)
         lcs.setDirection("left")
         while x < lcs.position.x do
             while lcs.forward() == false do
-                return false
-            end
+                if lcs.forceMoves then
+                     while turtle.detect() do
+                         turtle.dig()
+                     end
+                 else
+                     return false
+                end 
+             end
         end
     elseif x > lcs.position.x then
         lcs.setDirection("right")
         while x > lcs.position.x do
             while lcs.forward() == false do
-                return false
-            end
+                if lcs.forceMoves then
+                     while turtle.detect() do
+                         turtle.dig()
+                     end
+                 else
+                     return false
+                end 
+             end
         end
     end
 end
@@ -197,14 +224,26 @@ function lcs.moveToZ(z)
         lcs.setDirection("back")
         while z > lcs.position.z do
             while lcs.forward() == false do
-                return false
-            end
+                if lcs.forceMoves then
+                     while turtle.detect() do
+                         turtle.dig()
+                     end
+                 else
+                     return false
+                end 
+             end
         end
     elseif z < lcs.position.z then
         lcs.setDirection("forward")
         while z < lcs.position.z do
             while lcs.forward() == false do
-                return false
+               if lcs.forceMoves then
+                    while turtle.detect() do
+                        turtle.dig()
+                    end
+                else
+                    return false
+               end 
             end
         end
     end

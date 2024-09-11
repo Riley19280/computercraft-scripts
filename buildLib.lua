@@ -143,7 +143,7 @@ function buildLib.interactiveOptions(optinal)
 
 end
 
-function getBlockFromChest(block)
+function buildLib.getBlockFromChest(block)
     turtle.detectDigUp()
     turtle.up()
     turtle.detectDigUp()
@@ -156,7 +156,7 @@ function getBlockFromChest(block)
         turtle.down()
         print("Unable to find chest " .. buildLib.chestName .. '. Waiting for chest.')
         sleep(5)
-        return getBlockFromChest(block)
+        return buildLib.getBlockFromChest(block)
     end
 
     turtle.select(foundChest)
@@ -170,7 +170,7 @@ function getBlockFromChest(block)
         turtle.down()
         print("Unable to find chest " .. buildLib.tempChestName .. '. Waiting for chest.')
         sleep(5)
-        return getBlockFromChest(block)
+        return buildLib.getBlockFromChest(block)
     end
 
     turtle.select(foundChest)
@@ -184,7 +184,6 @@ function getBlockFromChest(block)
     for i = 1, perChest.size() do 
 		local item = perChest.getItemDetail(i)
         if item and item['name'] == block then
-            print(item['name'])
             perChest.pushItems(peripheral.getName(tempChest), i)
             found = true
             break
@@ -198,7 +197,7 @@ function getBlockFromChest(block)
     if not found then
         print("Unable to find block " .. block .. '. Waiting for blocks..')
         sleep(5)
-        return getBlockFromChest(block)
+        return buildLib.getBlockFromChest(block)
     end
 
 end
@@ -220,7 +219,7 @@ function getAnyBlockFromChest()
     turtle.findAnyItem()
 end
 
-function refillFromChestIfNeeded()
+function buildLib.refillFromChestIfNeeded()
     if buildLib.chestRefill == false then
         return
     end
@@ -236,7 +235,7 @@ function refillFromChestIfNeeded()
     
         for k, v in pairs(buildLib.getNeededInventory()) do
             for i = 1, v do
-                getBlockFromChest(k)
+                buildLib.getBlockFromChest(k)
             end
         end
     end
@@ -271,7 +270,7 @@ function hasCorrectInventory()
 end
 
 function buildLib.getSelection()
-    refillFromChestIfNeeded()
+    buildLib.refillFromChestIfNeeded()
 
     local blockIndex = nil
     if buildLib.selectionMode == 'random' then 

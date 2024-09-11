@@ -45,6 +45,10 @@ function util.clone_table(obj, seen)
 	return res
 end
 
+function util.chatMessage(msg)
+	rednet.broadcast(msg, "to_chat")
+end
+
 return util
 
 
