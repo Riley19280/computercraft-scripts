@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Rotation Control</title>
+    <style>
+        #slider-container {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="slider-container">
+    <label for="rotation-slider">Rotate:</label>
+    <input type="range" id="rotation-slider" min="0" max="360" value="0" step="1">
+    <span id="rotation-value">0</span>°
+</div>
+
+<div id="svg-container"></div>
+
+<script>
+    // SVG data as a string
+    const numPaths = 6;
+    const pathData = "M 110 165 L 48 165 L 78 180 L 120 180 L 153.4 122.6 L 144.113 106.505 Z";
+    
+    // Create SVG markup
+    let svgMarkup = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" version="1.0" viewBox="0 0 200 200">
+    `;
+    
+    // Add paths to SVG markup
+    for (let i = 0; i < numPaths; i++) {
+        const rotation = (360 / numPaths) * i;
+        svgMarkup += `
+            <path d="${pathData}" style="transform: rotate(${rotation}deg); transform-origin: 50% 50%;"/>
+        `;
+    }
+    
+    // Close SVG element
+    svgMarkup += `</svg>`;
+
+    // Insert SVG markup into the container
+    const svgContainer = document.getElementById('svg-container');
+    svgContainer.innerHTML = svgMarkup;
+    
+    // Get all path elements from the newly added SVG
+    const paths = Array.from(svgContainer.querySelectorAll('path'));
+    
+    // Slider element
+    const slider = document.getElementById('rotation-slider');
+    const rotationValue = document.getElementById('rotation-value');
+
+    slider.addEventListener('input', () => {
+        const angle = slider.value;
+        rotationValue.textContent = angle;
+
+        // Apply updated rotation to all paths
+        paths.forEach((path, index) => {
+            const totalRotation = parseFloat(angle) + (360 / numPaths) * index;
+            path.style.transform = `rotate(${totalRotation}deg)`;
+        });
+    });
+</script>
+
+</body>
+</html>

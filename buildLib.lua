@@ -6,6 +6,7 @@ local buildLib = {}
 -- can be random, any, or specific
 buildLib.selectionMode = "random" 
 buildLib.specificBlock = nil
+buildLib.distribution = nil
 
 buildLib.chestRefill = true
 buildLib.chestName = "enderstorage:ender_chest"
@@ -107,11 +108,31 @@ function interactiveChestRefill()
     end
 end
 
+function interactiveDistributionInput()
+    local distributions = {}
+    ::interactiveDistInput::
+
+    print('What block would you like to use?')
+    local block = read()
+    buildLib.addInventoryBlock(block, 1)
+
+    print('What are the odds of this block being selected? (# out of total)')
+    local value = read()
+    table.insert(distributions, {data=block, value=value})
+
+    print('Add another distribution? [y/n]')         
+    if read() == 'y' then
+        goto interactiveDistInput
+    end
+
+    return distributions
+end
+
 function interactiveSelectionModeInput()
-    print('Selection mode: [random, any, specific]')
+    print('Selection mode: [random, any, specific, blend, blend-group]')
     buildLib.selectionMode = read()
 
-    if buildLib.selectionMode ~= 'random' and buildLib.selectionMode ~= 'any' and buildLib.selectionMode ~= 'specific' then
+    if buildLib.selectionMode ~= 'random' and buildLib.selectionMode ~= 'any' and buildLib.selectionMode ~= 'specific' and buildLib.selectionMode ~= 'blend' and buildLib.selectionMode ~= 'blend-group' then
         print('Invalid selection mode')
         interactiveSelectionModeInput()
     end
@@ -120,6 +141,28 @@ function interactiveSelectionModeInput()
         print('What block would you like to use?')
         buildLib.specificBlock = read()
         buildLib.addInventoryBlock(buildLib.specificBlock, 1)
+    end
+
+    if buildLib.selectionMode == 'blend' then
+        buildLib.distribution = interactiveDistributionInput()
+    end
+
+    if buildLib.selectionMode == 'blend-group' then
+        buildLib.distribution = {}
+        ::blendGroupSelectionMode::
+
+        print('What are the odds of this group being selected? (# out of total)')
+        local value = read()
+        
+        table.insert(buildLib.distribution, {
+            value=value,
+            data=interactiveDistributionInput(),
+        })
+
+        print('Add another group? [y/n]')
+        if read() == 'y' then
+            goto blendGroupSelectionMode
+        end
     end
 
 end
@@ -269,6 +312,14 @@ function hasCorrectInventory()
     return true
 end
 
+function buildLib.getBlendSelection(distribution)
+    local result = util.getDistributionResult(distribution)
+
+    if result == nil then return result end
+
+    return turtle.findItem(result)
+end
+
 function buildLib.getSelection()
     buildLib.refillFromChestIfNeeded()
 
@@ -279,6 +330,8 @@ function buildLib.getSelection()
         blockIndex = turtle.findAnyItem()
     elseif buildLib.selectionMode == 'specific' then 
         blockIndex = turtle.findItem(buildLib.specificBlock)
+    elseif buildLib.selectionMode == 'blend' or buildLib.selectionMode == 'blend-group' then 
+        blockIndex = util.getDistributionResult(buildLib.distribution)
     end
 
     if blockIndex then

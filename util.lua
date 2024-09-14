@@ -49,6 +49,38 @@ function util.chatMessage(msg)
 	rednet.broadcast(msg, "to_chat")
 end
 
+-- A distribution is comprised of a table like so. Note distributions can be nested
+-- {
+-- 	{value=2, data="minecraft:stone"},
+--     {value=1, data={
+--         {value=1,data="minecraft:mossy_stone_bricks"},
+--         {value=1,data="minecraft:polished_blackstone_bricks"},
+--     	}
+-- 	}
+-- }
+function util.getDistributionResult(distribution) 
+	local selections = {}
+    
+    for i = 1, #distribution do
+        for j = 1, distribution[i]['value'] do
+            table.insert(selections, distribution[i]['data'])
+        end
+    end
+
+    if #selections > 0 then
+		local result = selections[math.random(#selections)]
+        
+        -- if resulting data is a table, then we will assume that it is another distribution 
+        if type(result) == "table" then
+            return util.getDistributionResult(result)
+        else
+            return result
+        end
+	else
+		return nil
+	end
+end
+
 return util
 
 

@@ -15,5 +15,21 @@ buildLib = require('buildLib')
 
 -- print(buildLib.getSelection())
 
-print(util.manhattanDistance(1,2,1,3))
-print(util.manhattanDistance3D(1,2,1,1,3,1))
+-- print(util.manhattanDistance(1,2,1,3))
+-- print(util.manhattanDistance3D(1,2,1,1,3,1))
+
+-- buildLib.interactiveOptions()
+
+
+buildLib.addInventoryBlock("minecraft:stone", 1)
+buildLib.addInventoryBlock("minecraft:stone_bricks", 1)
+buildLib.addInventoryBlock("minecraft:polished_blackstone_bricks", 1)
+-- util.tprint(buildLib.distribution)
+
+print(buildLib.getBlendSelection({
+    {value=1,data={
+        {value=1,data="minecraft:mossy_stone_bricks"},
+        {value=1,data="minecraft:polished_blackstone_bricks"}
+    }},
+    {value=1,data="minecraft:stone"},
+}))
