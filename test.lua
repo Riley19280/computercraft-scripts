@@ -1,6 +1,6 @@
 util = require('util')
 buildLib = require('buildLib')
-
+lcs = require('local_coordinate_system')
 
 -- -- buildLib.interactiveOptions()
 
@@ -21,15 +21,13 @@ buildLib = require('buildLib')
 -- buildLib.interactiveOptions()
 
 
-buildLib.addInventoryBlock("minecraft:stone", 1)
-buildLib.addInventoryBlock("minecraft:stone_bricks", 1)
-buildLib.addInventoryBlock("minecraft:polished_blackstone_bricks", 1)
+buildLib.addInventoryBlock("minecraft:quartz_block", 128)
+-- buildLib.addInventoryBlock("minecraft:stone_bricks", 1)
+-- buildLib.addInventoryBlock("minecraft:polished_blackstone_bricks", 1)
 -- util.tprint(buildLib.distribution)
 
-print(buildLib.getBlendSelection({
-    {value=1,data={
-        {value=1,data="minecraft:mossy_stone_bricks"},
-        {value=1,data="minecraft:polished_blackstone_bricks"}
-    }},
-    {value=1,data="minecraft:stone"},
-}))
+buildLib.refillMode = 'local'
+-- util.tprint(buildLib.getNeededInventory())
+-- print(buildLib.refillFromChestIfNeeded())
+
+print(lcs.moveToY(1))

@@ -10,7 +10,7 @@ lcs.forceMoves = true
 local glass ="minecraft:glass"
 buildLib.selectionMode = "specific" 
 buildLib.specificBlock = glass
-buildLib.addInventoryBlock(glass, 4)
+buildLib.addInventoryBlock(glass, 4*64)
 
 
 local args = {...}
@@ -22,11 +22,6 @@ if not args[1] then
     layer = tonumber(read())
 else 
     layer = args[1]
-end
-
-function file_exists(name)
-    local f=io.open(name,"r")
-    if f~=nil then io.close(f) return true else return false end
 end
 
 function writeProgress(text)
@@ -41,7 +36,7 @@ end
 
 local filename = 'bigsphere/bigsphere_' .. layer .. '.txt'
 
- if not file_exists(filename) then
+ if not fs.exists(filename) then
     print('Layer not found. Quitting.')
     return 
  end
@@ -140,6 +135,6 @@ util.chatMessage('Layer ' .. layer .. ' Finished')
 lcs.returnOrigin('yxz')
 
 
-if args[1] and not file_exists('progress/stop.txt') then
+if args[1] and not fs.exists('progress/stop.txt') then
     shell.run('bigsphere', layer + 1)
 end

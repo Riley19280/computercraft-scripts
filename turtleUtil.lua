@@ -30,6 +30,17 @@ function turtle.findItem(itemName)
 	return nil
 end
 
+function turtle.awaitItem(itemName)
+	local item = turtle.findItem(itemName)
+	
+	if item == nil then
+		print('Awaiting item ' .. itemName)
+		sleep(5)
+		return turtle.awaitItem(itemName)
+	end
+
+	return  item
+end
 
 function turtle.findAnyItem() 
 	local currentItem = turtle.getItemDetail()

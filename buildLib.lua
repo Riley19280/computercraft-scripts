@@ -3,12 +3,13 @@ require('turtleUtil')
 
 local buildLib = {}
 
--- can be random, any, or specific
-buildLib.selectionMode = "random" 
+-- can be any, specific, blend, blend-group
+buildLib.selectionMode = "any"
 buildLib.specificBlock = nil
 buildLib.distribution = nil
 
 buildLib.chestRefill = true
+buildLib.refillMode = 'remote'
 buildLib.chestName = "enderstorage:ender_chest"
 buildLib.tempChestName = "minecraft:chest"
 
@@ -28,8 +29,12 @@ function buildLib.setInventoryBlocks(table)
     buildLib.inventoryBlocks = util.clone_table(table)
 end
 
-function buildLib.addInventoryBlock(block, stacks)
-    table.insert(buildLib.inventoryBlocks, {name=block, count=stacks})
+function buildLib.addInventoryBlock(block, count)
+    if buildLib.inventoryBlocks[block] == nil then
+        buildLib.inventoryBlocks[block] = count
+    else
+        buildLib.inventoryBlocks[block] = buildLib.inventoryBlocks[block] + count
+    end
 end
 
 function interactiveInventoryConfig()
@@ -44,7 +49,7 @@ function interactiveInventoryConfig()
    if inventoryConfig == 'manual' then
         interactiveManualInventoryBlockConfig()
     elseif inventoryConfig == 'auto' then
-        interactiveAutoInventoryBlockConfig()
+        autoInventoryBlockConfig()
    end
 
 end
@@ -53,7 +58,7 @@ function interactiveManualInventoryBlockConfig()
     print('What block would you like to use?')
     local blockName = read()
 
-    print('How many stacks')
+    print('How many?')
     local blockCount = read()
 
     buildLib.addInventoryBlock(blockName, blockCount)
@@ -68,21 +73,12 @@ function interactiveManualInventoryBlockConfig()
     interactiveManualInventoryBlockConfig() 
 end
 
-function interactiveAutoInventoryBlockConfig() 
-    local invHashMap = {}
+function autoInventoryBlockConfig()
 	for i = 1, 16 do 
 		local item = turtle.getItemDetail(i)
         if item and not util.table_has_value(turtle.findBlacklist, item["name"]) then     
-            if invHashMap[item['name']] == nil then
-                invHashMap[item['name']] = 1
-            else
-                invHashMap[item['name']] = invHashMap[item['name']] + 1
-            end
+            buildLib.addInventoryBlock(item['name'], item['count'])
 		end
-    end
-    
-    for k, v in pairs(invHashMap) do
-        buildLib.addInventoryBlock(k, v)
     end
 end
 
@@ -92,6 +88,9 @@ function interactiveChestRefill()
         
     if chestRefill == 'y' then
         buildLib.chestRefill = true
+
+        print('Refill mode: [remote, local]')
+        buildLib.refillMode = read()
 
         print('Chest name is '.. buildLib.chestName .. ' would you like to change it? [y/n]')
         local changeChestName = read()
@@ -114,7 +113,6 @@ function interactiveDistributionInput()
 
     print('What block would you like to use?')
     local block = read()
-    buildLib.addInventoryBlock(block, 1)
 
     print('What are the odds of this block being selected? (# out of total)')
     local value = read()
@@ -129,10 +127,10 @@ function interactiveDistributionInput()
 end
 
 function interactiveSelectionModeInput()
-    print('Selection mode: [random, any, specific, blend, blend-group]')
+    print('Selection mode: [any, specific, blend, blend-group]')
     buildLib.selectionMode = read()
 
-    if buildLib.selectionMode ~= 'random' and buildLib.selectionMode ~= 'any' and buildLib.selectionMode ~= 'specific' and buildLib.selectionMode ~= 'blend' and buildLib.selectionMode ~= 'blend-group' then
+    if buildLib.selectionMode ~= 'any' and buildLib.selectionMode ~= 'specific' and buildLib.selectionMode ~= 'blend' and buildLib.selectionMode ~= 'blend-group' then
         print('Invalid selection mode')
         interactiveSelectionModeInput()
     end
@@ -140,7 +138,9 @@ function interactiveSelectionModeInput()
     if buildLib.selectionMode == 'specific' then
         print('What block would you like to use?')
         buildLib.specificBlock = read()
-        buildLib.addInventoryBlock(buildLib.specificBlock, 1)
+        print('How many to keep in inventory?')
+        local count = tonumber(read())
+        buildLib.addInventoryBlock(buildLib.specificBlock, count)
     end
 
     if buildLib.selectionMode == 'blend' then
@@ -186,160 +186,163 @@ function buildLib.interactiveOptions(optinal)
 
 end
 
-function buildLib.getBlockFromChest(block)
-    turtle.detectDigUp()
-    turtle.up()
-    turtle.detectDigUp()
-    sleep(.1)
-
-    -- place chest containing block supply
-    local foundChest = turtle.findItem(buildLib.chestName)
-
-    if foundChest == nil then
-        turtle.down()
-        print("Unable to find chest " .. buildLib.chestName .. '. Waiting for chest.')
-        sleep(5)
-        return buildLib.getBlockFromChest(block)
-    end
-
-    turtle.select(foundChest)
-    turtle.placeUp()
+function buildLib.syncInventory()
+    -- function assumes that there is a chest at the top and bottom
+    -- needed block will be taken from the bottom chest and placed into the top one
     
-    -- place temp chest to move blocks into
-    local foundChest = turtle.findItem(buildLib.tempChestName)
+    local blockChest = peripheral.wrap("bottom")
+    local tempChest = peripheral.wrap("top")
 
-    if foundChest == nil then
-        turtle.detectDigUp()
-        turtle.down()
-        print("Unable to find chest " .. buildLib.tempChestName .. '. Waiting for chest.')
-        sleep(5)
-        return buildLib.getBlockFromChest(block)
-    end
+    local neededItems = buildLib.getMissingInventory()
 
-    turtle.select(foundChest)
-    turtle.placeDown()
-    
-    sleep(.25)
+    for block, neededCount in pairs(neededItems) do
+        while neededCount > 0 do
+            local pullCount = math.min(neededCount, 64)  -- Pull up to 64 items at a time
 
-    local perChest = peripheral.wrap("top")
-    local tempChest = peripheral.wrap("bottom")
-    local found = false
-    for i = 1, perChest.size() do 
-		local item = perChest.getItemDetail(i)
-        if item and item['name'] == block then
-            perChest.pushItems(peripheral.getName(tempChest), i)
-            found = true
-            break
-		end
-    end
+            local foundInChest = false
+            for i = 1, blockChest.size() do 
+                local item = blockChest.getItemDetail(i)
+                if item and item['name'] == block then
+                    pullCount = math.min(pullCount, item['count'])
+                    blockChest.pushItems(peripheral.getName(tempChest), i, pullCount)
+                    neededCount = neededCount - pullCount
+                    foundInChest = true
+                    break
+                end
+            end
 
-    turtle.digUp()
-    turtle.digDown()
-    turtle.down()
-
-    if not found then
-        print("Unable to find block " .. block .. '. Waiting for blocks..')
-        sleep(5)
-        return buildLib.getBlockFromChest(block)
-    end
-
-end
-
-function getAnyBlockFromChest() 
-    turtle.detectDigUp()
-    -- place chest containing block supply
-    local foundChest = turtle.findItem(buildLib.chestName)
-
-    if foundChest == nil then
-        print("Unable to find chest " .. buildLib.chestName .. '. Waiting for chest.')
-        sleep(5)
-        return getAnyBlockFromChest()
-    end
-
-    turtle.suckUp()
-    turtle.digUp()
-
-    turtle.findAnyItem()
-end
-
-function buildLib.refillFromChestIfNeeded()
-    if buildLib.chestRefill == false then
-        return
-    end
-
-    if #buildLib.inventoryBlocks == 0 then
-        if not turtle.findAnyItem() then
-            getAnyBlockFromChest()
-        end
-    else
-        if hasCorrectInventory() then
-            return
-        end
-    
-        for k, v in pairs(buildLib.getNeededInventory()) do
-            for i = 1, v do
-                buildLib.getBlockFromChest(k)
+            if not foundInChest then
+                pullCount = 0
+                print("Not enough " .. block .. " in the chest. Missing " .. neededCount - pullCount .. ". Waiting..")
+                sleep(1) 
             end
         end
     end
 
 end
 
-function buildLib.getNeededInventory() 
-    local counts = {}
+function buildLib.refillInventory(block, count)
 
-    for k, v in pairs(buildLib.inventoryBlocks) do
-        counts[v['name']] = v['count']
+    if buildLib.refillMode == 'remote' then
+        turtle.detectDigUp()
+        turtle.up()
+        turtle.detectDigUp()
+    
+        -- place chest containing block supply
+        local blockChest = turtle.awaitItem(buildLib.chestName)
+        turtle.select(blockChest)
+        turtle.placeDown()
+
+        local tempChest = turtle.awaitItem(buildLib.tempChestName)
+        turtle.select(tempChest)
+        turtle.placeUp()
+
+        sleep(0.25)
+
+        buildLib.syncInventory()
+        
+        turtle.digUp()
+        turtle.digDown()
+        turtle.down()
     end
+
+    if buildLib.refillMode == 'local' then 
+        local currentPosition = util.clone_table(lcs.position)
+
+        lcs.returnOrigin()
+
+        turtle.up()
+        turtle.forward()
+
+        local tempChest = turtle.awaitItem(buildLib.tempChestName)
+        turtle.select(tempChest)
+        turtle.placeUp()
+
+        sleep(0.25)
+
+        buildLib.syncInventory()
+
+        turtle.digUp()
+
+        lcs.returnOrigin()
+
+        lcs.moveToPosition(currentPosition)
+    end
+   
+end
+
+function buildLib.refillIfNeeded()
+    if not buildLib.chestRefill then
+        return
+    end
+
+    if not buildLib.inventoryRefillNeeded() then
+        return
+    end
+    
+    buildLib.refillInventory()
+end
+
+function buildLib.getMissingInventory() 
+    local counts = util.clone_table(buildLib.inventoryBlocks)
 
     for i = 1, 16 do 
 		local item = turtle.getItemDetail(i)
         if item and counts[item['name']] ~= nil then     
-            counts[item['name']] = counts[item['name']] - 1
+            counts[item['name']] = counts[item['name']] - item['count']
+
+            if counts[item['name']] <= 0 then
+                counts[item['name']] = nil
+            end
 		end
     end
 
     return counts
 end
 
-function hasCorrectInventory()
-    for k, v in pairs(buildLib.getNeededInventory()) do
-        if v ~= 0 then
-            return false
+function buildLib.inventoryRefillNeeded()
+    local neededItems = buildLib.getMissingInventory()
+
+    for block, count in pairs(buildLib.inventoryBlocks) do
+        if neededItems[block] ~= nil then
+            if count - neededItems[block] == 0 then
+                return true
+            end
         end
     end
 
-    return true
-end
-
-function buildLib.getBlendSelection(distribution)
-    local result = util.getDistributionResult(distribution)
-
-    if result == nil then return result end
-
-    return turtle.findItem(result)
+    return false
 end
 
 function buildLib.getSelection()
-    buildLib.refillFromChestIfNeeded()
+    buildLib.refillIfNeeded()
 
     local blockIndex = nil
-    if buildLib.selectionMode == 'random' then 
-        blockIndex = turtle.findRandomItem()
-    elseif buildLib.selectionMode == 'any' then 
+    local blockToFind = nil
+    if buildLib.selectionMode == 'any' then 
         blockIndex = turtle.findAnyItem()
     elseif buildLib.selectionMode == 'specific' then 
-        blockIndex = turtle.findItem(buildLib.specificBlock)
+        blockToFind = buildLib.specificBlock
     elseif buildLib.selectionMode == 'blend' or buildLib.selectionMode == 'blend-group' then 
-        blockIndex = util.getDistributionResult(buildLib.distribution)
+        blockToFind = util.getDistributionResult(buildLib.distribution)
     end
 
     if blockIndex then
         return blockIndex
     end
 
-    print('Unable to find a block to place. Waiting..')
-    sleep(5)
+    if blockToFind then
+        blockIndex = turtle.findItem(blockToFind)
+
+        if not blockIndex then
+            print('Unable to find '..blockToFind..' to place. Waiting..')
+            sleep(5)
+            return buildLib.getSelection()
+        end
+
+        return blockIndex
+    end
+
     return buildLib.getSelection()
 end
 

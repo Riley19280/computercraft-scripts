@@ -92,19 +92,20 @@ function lcs.setDirection(dir)
     local dirVal = 0
     if dir == "forward" then
         dirVal = 0
-        elseif dir == "right" then
+    elseif dir == "right" then
         dirVal = 1
-        elseif dir == "back" then
+    elseif dir == "back" then
         dirVal = 2
-        elseif dir == "left" then
+    elseif dir == "left" then
         dirVal = 3
     end
+    
     if (dirVal + 2) == lcs.direction or (dirVal - 2) == lcs.direction then
         lcs.turnRight()
         lcs.turnRight()
-        elseif (lcs.direction + 1) == dirVal or (lcs.direction - 3) == dirVal then
+    elseif (lcs.direction + 1) == dirVal or (lcs.direction - 3) == dirVal then
         lcs.turnRight()
-        elseif (lcs.direction - 1) == dirVal or (lcs.direction + 3) == dirVal then
+    elseif (lcs.direction - 1) == dirVal or (lcs.direction + 3) == dirVal then
         lcs.turnLeft()
     end
 end
@@ -247,10 +248,6 @@ function lcs.moveToZ(z)
             end
         end
     end
-end
- 
-function lcs.returnSavedDir()
-    lcs.setDirection(lcs.savedDir)
 end
 
 function lcs.isNative() 

@@ -1,0 +1,155 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="renderer.js" type="module"></script>
+    <title>Schematic Generator</title>
+</head>
+<body class="bg-gray-100 flex h-screen p-4">
+    <div class="flex flex-col w-96 mr-4">
+        <div class="bg-white p-6 rounded shadow-md w-96 mb-6">
+            <h1 class="text-xl font-bold mb-4">Schematic Generator</h1>
+            <form id="svg-form">
+                <div class="mb-4">
+                    <label for="svg" class="block mb-1 ">SVG</label>
+                    <textarea id="svg" class="block h-16 border rounded w-full px-2 py-1" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="baseName" class="block mb-1">Base Name</label>
+                    <input type="text" id="baseName" class="border rounded w-full px-2 py-1" required>
+                </div>
+                <div class="mb-4">
+                    <label for="baseHeight" class="block mb-1">Base Height</label>
+                    <input type="number" id="baseHeight" class="border rounded w-full px-2 py-1" required>
+                </div>
+                <div class="mb-4">
+                    <label for="rotation" class="block mb-1">Rotation</label>
+                    <input type="number" id="rotation" class="border rounded w-full px-2 py-1" required>
+                </div>
+                <div class="mb-4">
+                    <label for="sizeX" class="block mb-1">Size X</label>
+                    <input type="number" id="sizeX" class="border rounded w-full px-2 py-1" required>
+                </div>
+                <div class="mb-4">
+                    <label for="sizeY" class="block mb-1">Size Y</label>
+                    <input type="number" id="sizeY" class="border rounded w-full px-2 py-1" required>
+                </div>
+                <div class="flex justify-center">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-indigo-500 hover:bg-indigo-400 transition ease-in-out duration-150">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Create</span>
+                    </button>
+                </div>
+            </form>
+            <div id="response" class="mt-4"></div>
+        </div>
+    
+        <div class="bg-white p-6 rounded shadow-md w-96">
+            <h2 class="text-lg font-bold mb-4">Previous Schematics</h2>
+            <ul id="schematic-list"></ul>
+            <select id="schematic-select" class="border rounded w-full px-2 py-1 mb-4"></select>
+            <div class="flex justify-center">
+                <button id="load-schematic" type="submit" class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-green-500 hover:bg-green-400 transition ease-in-out duration-150">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Load</span>
+                </button>
+            </div>
+            <div id="schematic-content" class="mt-4"></div>
+        </div>
+    </div>
+    <div id="renderer" class="flex grow-1 w-full"></div>
+    <script>
+        document.getElementById('svg-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const baseName = document.getElementById('baseName').value;
+            const baseHeight = document.getElementById('baseHeight').value;
+            const rotation = document.getElementById('rotation').value;
+            const sizeX = document.getElementById('sizeX').value;
+            const sizeY = document.getElementById('sizeY').value;
+            const svg = document.getElementById('svg').value
+
+            document.querySelector('#svg-form button svg').classList.remove('hidden')
+            document.querySelector('#svg-form button span').innerText = 'Processing...'
+
+            document.getElementById('response').innerText = ''
+
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ baseHeight, rotation, sizeX, sizeY, baseName, svg })
+            });
+
+            document.querySelector('#svg-form button svg').classList.add('hidden')
+            document.querySelector('#svg-form button span').innerText = 'Create'
+
+            const data = await response.json();
+            document.getElementById('response').innerText = data.message || data.error;
+            loadSchematics()
+        });
+
+        async function loadSchematics() {
+            const response = await fetch('/api/schematics');
+            const schematics = await response.json();
+
+            const select = document.getElementById('schematic-select');
+            select.innerHTML = ''
+
+            schematics.forEach(dir => {
+                const option = document.createElement('option');
+                option.value = dir;
+                option.innerText = dir;
+                select.appendChild(option);
+            });
+        }
+
+        document.getElementById('load-schematic').addEventListener('click', async () => {
+            const selectedSchematic = document.getElementById('schematic-select').value;
+            
+            document.querySelector('#load-schematic svg').classList.remove('hidden')
+            document.querySelector('#load-schematic span').innerText = 'Loading...'
+
+            const response = await fetch(`/api/schematics/${selectedSchematic}`);
+            const data = await response.json();
+
+            const contentDiv = document.getElementById('schematic-content');
+            contentDiv.innerText = '';
+
+            if (Array.isArray(data)) {
+                const event = new CustomEvent("renderer/data", { detail: data });
+                window.dispatchEvent(event);
+            } else {
+                contentDiv.innerText = data.error || 'No data found';
+            }
+
+            // Load options for the selected schematic
+            const optionsResponse = await fetch(`/api/schematics/${selectedSchematic}/options`);
+            const optionsData = await optionsResponse.json();
+            if (!optionsResponse.ok) {
+                document.getElementById('response').innerText = optionsData.error;
+                return;
+            }
+
+            
+            document.querySelector('#load-schematic svg').classList.add('hidden')
+            document.querySelector('#load-schematic span').innerText = 'Load'
+
+            // Populate the form with the loaded options
+            document.getElementById('baseHeight').value = optionsData.baseHeight;
+            document.getElementById('rotation').value = optionsData.rotation;
+            document.getElementById('sizeX').value = optionsData.sizeX;
+            document.getElementById('sizeY').value = optionsData.sizeY;
+            document.getElementById('baseName').value = optionsData.baseName;
+            document.getElementById('svg').value = optionsData.svg;
+        });
+
+        // Load schematics on page load
+        window.onload = loadSchematics;
+    </script>
+</body>
+</html>

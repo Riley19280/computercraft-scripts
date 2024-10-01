@@ -5,8 +5,8 @@ local bonemeal = 'minecraft:bone_meal'
 local sapling  = 'minecraft:birch_sapling'
 local air = 'minecraft:air'
 
-buildLib.addInventoryBlock(sapling, 1)
-buildLib.addInventoryBlock(bonemeal, 3)
+buildLib.addInventoryBlock(sapling, 64)
+buildLib.addInventoryBlock(bonemeal, 64*3)
 
 while true do
     buildLib.refillFromChestIfNeeded()

@@ -1,5 +1,6 @@
 const sharp = require('sharp');
 const fs = require('fs');
+const { basename } = require('path');
 
 // https://yqnn.github.io/svg-path-editor/
 function generateSvg() {
@@ -29,7 +30,19 @@ function lerp(start, end, val) {
 (async () => {
     
 const baseHeight = 30
-const rotation = 60
+const rotation = 0
+
+const sizeX = 200
+const sizeY = 200
+
+const shiftX = sizeX / 2
+const shiftY = sizeY / 2
+
+const baseName = 'base'
+
+if (fs.existsSync(basename)) {
+    fs.mkdirSync(baseName)
+}
 
 const svg = generateSvg()
 
@@ -37,27 +50,24 @@ for(let layer = 0; layer < baseHeight; layer++) {
     const currentRotation = lerp(0, rotation, layer / baseHeight)
 
     const image = sharp(Buffer.from(svg))
-    .resize(200, 200)
+    .resize(sizeX, sizeY)
     .rotate(currentRotation, {background: { r: 0, g: 0, b: 0, alpha: 0 }})
     .resize({
-        width: 200,
-        height: 200,
+        width: sizeX,
+        height: sizeY,
         withoutReduction: true,
         withoutEnlargement: true,
         background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
-    .threshold()
+    .threshold(1)
 
-
-    await image.toFile(`base/base_${layer}.png`, (err, info) => { 
+    await image.toFile(`${baseName}/base_${layer}.png`, (err, info) => { 
 
     });  
 
-
-    // Read the image and convert to raw pixel data
     const { data, info } = await image
-    .ensureAlpha()   // Ensure the image has an alpha channel
-    .raw()           // Get raw pixel data
+    .ensureAlpha() 
+    .raw()          
     .toBuffer({ resolveWithObject: true });
 
     const { width, height, channels } = info;
@@ -79,11 +89,11 @@ for(let layer = 0; layer < baseHeight; layer++) {
             const block = 'any'
 
             if(isVisible) {
-                txtOut += `${x} ${layer} ${y} ${block}\n`
+                txtOut += `${x - shiftX} ${layer} ${y - shiftY} ${block}\n`
             }
         }
     }
     
-    fs.writeFile(`base/layer_${layer}.txt`, txtOut, () => {})
+    fs.writeFile(`${baseName}/layer_${layer}.txt`, txtOut, () => {})
 }
 })()
