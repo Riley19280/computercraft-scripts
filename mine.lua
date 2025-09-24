@@ -56,7 +56,7 @@ for d = 1,distance,2 do
 
 	placeFloor()
 
-	for h = 1, height,1 do
+	for h = 1, height - 1,1 do
 		turtle.detectDigUp()
 		turtle.up()
 	end
@@ -68,7 +68,7 @@ for d = 1,distance,2 do
 	
 	placeCeiling()
 	
-	for h = 1, height,1 do
+	for h = 1, height - 1,1 do
 		turtle.detectDigDown()
 		turtle.down()
 	end
