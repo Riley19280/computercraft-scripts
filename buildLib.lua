@@ -8,9 +8,13 @@ buildLib.selectionMode = "any"
 buildLib.specificBlock = nil
 buildLib.distribution = nil
 
+buildLib.refueling = false
+buildLib.fuelValue = 80 -- coal
+buildLib.fuelName = 'minecraft:coal'
+
 buildLib.chestRefill = true
 buildLib.refillMode = 'remote'
-buildLib.chestName = "enderstorage:ender_chest"
+buildLib.chestName = "enderchests:ender_chest"
 buildLib.tempChestName = "minecraft:chest"
 
 buildLib.blacklist = {buildLib.chestName, buildLib.tempChestName}
@@ -34,6 +38,18 @@ function buildLib.addInventoryBlock(block, count)
         buildLib.inventoryBlocks[block] = count
     else
         buildLib.inventoryBlocks[block] = buildLib.inventoryBlocks[block] + count
+    end
+end
+
+function buildLib.removeInventoryBlock(block, count)
+    if buildLib.inventoryBlocks[block] == nil then
+        return
+    else
+        buildLib.inventoryBlocks[block] = buildLib.inventoryBlocks[block] - count
+
+        if buildLib.inventoryBlocks[block] <=0 then
+            buildLib.inventoryBlocks[block] = nil
+        end
     end
 end
 
@@ -195,6 +211,15 @@ function buildLib.syncInventory()
 
     local neededItems = buildLib.getMissingInventory()
 
+    -- place current inventory into chest as well so that blocks properly stack
+    for i = 1, 16 do
+		local item = turtle.getItemDetail(i)
+		if item and not util.table_has_value(turtle.findBlacklist, item["name"]) then
+            turtle.select(i)
+            turtle.dropUp()
+		end
+	end
+
     for block, neededCount in pairs(neededItems) do
         while neededCount > 0 do
             local pullCount = math.min(neededCount, 64)  -- Pull up to 64 items at a time
@@ -219,6 +244,47 @@ function buildLib.syncInventory()
         end
     end
 
+    if buildLib.refueling then
+        turtle.digUp()
+        turtle.select(turtle.findItem(buildLib.tempChestName))
+        turtle.placeUp()
+
+        local limit = turtle.getFuelLimit()
+        local neededFuel = turtle.getFuelLimit() - turtle.getFuelLevel()
+
+        local neededCount = math.floor(neededFuel / buildLib.fuelValue)
+
+        print('Refueling started, need ' .. neededCount .. ' ' .. buildLib.fuelName)
+        
+        while neededCount > 0 do
+            local pullCount = math.min(neededCount, 64)  -- Pull up to 64 items at a time
+
+            local foundInChest = false
+            for i = 1, blockChest.size() do 
+                local item = blockChest.getItemDetail(i)
+                if item and item['name'] == buildLib.fuelName then
+                    pullCount = math.min(pullCount, item['count'])
+                    blockChest.pushItems(peripheral.getName(tempChest), i, pullCount)
+                    neededCount = neededCount - pullCount
+                    foundInChest = true
+                    break
+                end
+            end
+
+            if not foundInChest then
+                pullCount = 0
+                print("Not enough " .. buildLib.fuelName .. " in the chest. Missing " .. neededCount - pullCount .. ". Waiting..")
+                sleep(1) 
+            end
+
+            turtle.suckUp()
+            turtle.select(turtle.findItem(buildLib.fuelName))
+            turtle.refuel()
+            print('Fuel is now ' .. turtle.getFuelLevel())
+        end
+
+    end
+
 end
 
 function buildLib.refillInventory(block, count)
@@ -240,7 +306,9 @@ function buildLib.refillInventory(block, count)
         sleep(0.25)
 
         buildLib.syncInventory()
-        
+
+        sleep(0.25)
+
         turtle.digUp()
         turtle.digDown()
         turtle.down()
@@ -261,6 +329,8 @@ function buildLib.refillInventory(block, count)
         sleep(0.25)
 
         buildLib.syncInventory()
+
+        sleep(0.25)
 
         turtle.digUp()
 
@@ -334,10 +404,11 @@ function buildLib.getSelection()
     if blockToFind then
         blockIndex = turtle.findItem(blockToFind)
 
-        if not blockIndex then
+        while not blockIndex do
+            blockIndex = turtle.findItem(blockToFind)
+
             print('Unable to find '..blockToFind..' to place. Waiting..')
             sleep(5)
-            return buildLib.getSelection()
         end
 
         return blockIndex

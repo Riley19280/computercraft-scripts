@@ -1,7 +1,7 @@
 util = require('util')
 buildLib = require('buildLib')
 lcs = require('local_coordinate_system')
-
+-- plane = require('plane')
 -- -- buildLib.interactiveOptions()
 
 -- buildLib.addInventoryBlock('minecraft:smooth_quartz', 4)
@@ -20,14 +20,22 @@ lcs = require('local_coordinate_system')
 
 -- buildLib.interactiveOptions()
 
+buildLib.chestRefill = true
+buildLib.refillMode = 'remote'
+buildLib.selectionMode = 'blend'
+buildLib.refueling = true
 
-buildLib.addInventoryBlock("minecraft:quartz_block", 128)
--- buildLib.addInventoryBlock("minecraft:stone_bricks", 1)
--- buildLib.addInventoryBlock("minecraft:polished_blackstone_bricks", 1)
--- util.tprint(buildLib.distribution)
+buildLib.setInventoryBlocks({
+    ['minecraft:quartz_block']=1*64,
+    ['minecraft:smooth_quartz']=1*64,
+    ['minecraft:quartz_bricks']=1*64,
+    ['minecraft:chiseled_quartz_block']=1*64,
+    ['minecraft:chiseled_deepslate']=1*64,
+    ['minecraft:polished_deepslate']=1*64,
+    ['minecraft:deepslate_bricks']=1*64,
+    ['minecraft:cracked_deepslate_bricks']=1*64,
+    ['minecraft:deepslate_tiles']=1*64,
+    ['minecraft:cracked_deepslate_tiles']=1*64,
+})
 
-buildLib.refillMode = 'local'
--- util.tprint(buildLib.getNeededInventory())
--- print(buildLib.refillFromChestIfNeeded())
-
-print(lcs.moveToY(1))
+buildLib.refillIfNeeded()

@@ -6,6 +6,8 @@ buildLib = require('buildLib')
 lcs.loadNative()
 lcs.forceMoves = true
 
+local removeFileContentsOnLayerCompletion = true
+
 local args = {...}
 
 print("Enter folder path for schematic layers:")
@@ -143,6 +145,18 @@ end
 function process()
     for _, layerFileName in ipairs(getLayerFiles()) do
         doLayer(layerFileName)
+
+        if removeFileContentsOnLayerCompletion then
+            local file = io.open(progressPath .. '/' .. layerFileName, "w")
+            io.output(file)
+            io.write('')
+            file:close()
+
+            file = io.open(schematicPath .. '/' .. layerFileName, "w")
+            io.output(file)
+            io.write('')
+            file:close()
+        end
     
         if shouldStop() then
             print("Stop Detected, Exiting")
@@ -159,27 +173,73 @@ function configureBuildingForLayer(layerFileName)
     local totalLayers = #getLayerFiles()
     local layerNumber = layerNumberFromFilename(layerFileName)
 
+    totalLayers = 150
+
+    local deepslate = {
+        {value=1,data="minecraft:chiseled_deepslate"},
+        {value=2,data="minecraft:polished_deepslate"},
+        {value=2,data="minecraft:deepslate_bricks"},
+        {value=2,data="minecraft:cracked_deepslate_bricks"},
+        {value=2,data="minecraft:deepslate_tiles"},
+        {value=2,data="minecraft:cracked_deepslate_tiles"},  
+    }
+
+    local quartz = {
+        {value=2,data="minecraft:quartz_bricks"},
+        {value=2,data="minecraft:quartz_block"},
+        {value=2,data="minecraft:smooth_quartz"},
+        {value=1,data="minecraft:chiseled_quartz_block"},
+    }
+
+    buildLib.refueling = true
     buildLib.chestRefill = true
+    buildLib.refillMode = 'remote'
     buildLib.selectionMode = 'blend'
-    buildLib.refillMode = 'local'
-    buildLib.setInventoryBlocks({['minecraft:quartz_block']=12*64})
-    buildLib.distribution = {
-        {
-            value=totalLayers-layerNumber, 
-            data={
-                -- {value=1,data="minecraft:deepslate_bricks"},
-                -- {value=1,data="minecraft:polished_deepslate"},
-                -- {value=1,data="minecraft:deepslate_tiles"},
-                {value=1,data="minecraft:quartz_block"},
-            }
-        },
-        {
-            value=layerNumber, 
-            data={
-                {value=1,data="minecraft:quartz_block"},
+
+    buildLib.setInventoryBlocks({
+        ['minecraft:quartz_block']=1*64,
+        ['minecraft:smooth_quartz']=1*64,
+        ['minecraft:quartz_bricks']=1*64,
+        ['minecraft:chiseled_quartz_block']=1*64,
+        ['minecraft:chiseled_deepslate']=1*64,
+        ['minecraft:polished_deepslate']=1*64,
+        ['minecraft:deepslate_bricks']=1*64,
+        ['minecraft:cracked_deepslate_bricks']=1*64,
+        ['minecraft:deepslate_tiles']=1*64,
+        ['minecraft:cracked_deepslate_tiles']=1*64,
+    })
+
+    if layerNumber <= 36 then
+        buildLib.distribution = {
+            {
+                value=1, 
+                data=deepslate,
+            },
+        }
+    elseif layerNumber <= totalLayers - 22 then
+        buildLib.distribution = {
+            {
+                value=totalLayers - layerNumber - 22, 
+                data=deepslate,
+            },
+            {
+                value=layerNumber - 36, 
+                data=quartz,
             }
         }
-    }
+
+    else
+        buildLib.distribution = {
+            {
+                value=1, 
+                data=quartz,
+            },
+        }
+    end
+
+    buildLib.refillIfNeeded()
 end
 
 process()
+
+-- refulel is 80 per coal 5120 per stack

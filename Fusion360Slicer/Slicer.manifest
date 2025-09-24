@@ -1,0 +1,10 @@
+{
+	"autodeskProduct":	"Fusion",
+	"type":	"script",
+	"author":	"Riley",
+	"description":	{
+		"":	"Slice a design into image layers"
+	},
+	"supportedOS":	"windows|mac",
+	"editEnabled":	true
+}

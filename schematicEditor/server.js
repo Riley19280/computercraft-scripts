@@ -1,13 +1,20 @@
 const express = require('express');
+const multer = require('multer');
+
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
+
+const { groupDataByY, saveGroupedData} = require('./voxels-to-layers.js')
+
+const upload = multer({ dest: 'uploads/' });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static('public'));
+
 
 // List all schematics
 app.get('/api/schematics', (req, res) => {
@@ -111,70 +118,126 @@ function lerp(start, end, val) {
     return start + (end - start) * val;
 }
 
-app.post('/api/generate', async (req, res) => {
-    let { baseHeight, rotation, sizeX, sizeY, baseName, svg } = req.body;
+app.post('/api/generate/svg', async (req, res) => {
+    try { 
+        let { baseHeight, rotation, sizeX, sizeY, baseName, svg } = req.body;
 
-    baseHeight = parseInt(baseHeight)
-    rotation = parseInt(rotation)
-    sizeX = parseInt(sizeX)
-    sizeY = parseInt(sizeY)
+        baseHeight = parseInt(baseHeight)
+        rotation = parseInt(rotation)
+        sizeX = parseInt(sizeX)
+        sizeY = parseInt(sizeY)
 
-    if (!baseName) {
-        return res.status(400).json({ error: 'Base name is required.' });
-    }
-
-    const schematicsDir = path.join(__dirname, 'schematics');
-    if (!fs.existsSync(schematicsDir)) {
-        fs.mkdirSync(schematicsDir);
-    }
-    
-    const basePath = path.join(schematicsDir, baseName);
-    if (!fs.existsSync(basePath)) {
-        fs.mkdirSync(basePath);
-    }
-
-    fs.writeFileSync(path.join(basePath, 'options.json'), JSON.stringify(req.body, null, 2));
-
-    for (let layer = 0; layer < baseHeight; layer++) {
-        const currentRotation = lerp(0, rotation, layer / baseHeight);
-
-        const image = sharp(Buffer.from(svg))
-            .resize(sizeX, sizeY)
-            .rotate(currentRotation, {background: { r: 0, g: 0, b: 0, alpha: 0 }})
-            .resize({
-                width: sizeX,
-                height: sizeY,
-                withoutReduction: true,
-                withoutEnlargement: true,
-                background: { r: 0, g: 0, b: 0, alpha: 0 },
-            })
-            .threshold()
-
-        // await image.toFile(`${basePath}/base_${layer}.png`);
-
-        const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
-        const { width, height, channels } = info;
-
-        let txtOut = '';
-        const shiftX = sizeX / 2;
-        const shiftY = sizeY / 2;
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const index = (y * width + x) * channels;
-                const a = channels === 4 ? data[index + 3] : 255;
-
-                if (a !== 0) {
-                    txtOut += `${x - shiftX} ${layer} ${y - shiftY} any\n`;
-                }
-            }
+        if (!baseName) {
+            return res.status(400).json({ error: 'Base name is required.' });
         }
 
-        fs.writeFileSync(`${basePath}/layer_${layer}.txt`, txtOut);
+        const schematicsDir = path.join(__dirname, 'schematics');
+        if (!fs.existsSync(schematicsDir)) {
+            fs.mkdirSync(schematicsDir);
+        }
+        
+        const basePath = path.join(schematicsDir, baseName);
+        if (!fs.existsSync(basePath)) {
+            fs.mkdirSync(basePath);
+        }
+
+        fs.writeFileSync(path.join(basePath, 'options.json'), JSON.stringify(req.body, null, 2));
+
+        for (let layer = 0; layer < baseHeight; layer++) {
+            const currentRotation = lerp(0, rotation, layer / baseHeight);
+
+            const image = sharp(Buffer.from(svg))
+                .resize(sizeX, sizeY)
+                .rotate(currentRotation, {background: { r: 0, g: 0, b: 0, alpha: 0 }})
+                .resize({
+                    width: sizeX,
+                    height: sizeY,
+                    withoutReduction: true,
+                    withoutEnlargement: true,
+                    background: { r: 0, g: 0, b: 0, alpha: 0 },
+                })
+                .threshold()
+
+            // await image.toFile(`${basePath}/base_${layer}.png`);
+
+            const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+            const { width, height, channels } = info;
+
+            let txtOut = '';
+            const shiftX = sizeX / 2;
+            const shiftY = sizeY / 2;
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const index = (y * width + x) * channels;
+                    const a = channels === 4 ? data[index + 3] : 255;
+
+                    if (a !== 0) {
+                        txtOut += `${x - shiftX} ${layer} ${y - shiftY} any\n`;
+                    }
+                }
+            }
+
+            fs.writeFileSync(`${basePath}/layer_${layer}.txt`, txtOut);
+        }
+        
+    } catch(e) {
+        console.error(e)
+        return res.json({ error: e.toString() });
     }
 
     res.json({ message: 'SVG files generated successfully!' });
 });
+
+app.post('/api/generate/drububu', upload.single('file'), async (req, res) => {
+    // Convert files from 
+    // https://drububu.com/miscellaneous/voxelizer/?out=txt
+    try {
+        let { baseName } = req.body;
+
+        if (!baseName) {
+            return res.status(400).json({ error: 'Base name is required.' });
+        }
+
+        const schematicsDir = path.join(__dirname, 'schematics');
+        if (!fs.existsSync(schematicsDir)) {
+            fs.mkdirSync(schematicsDir);
+        }
+        
+        const basePath = path.join(schematicsDir, baseName);
+        if (!fs.existsSync(basePath)) {
+            fs.mkdirSync(basePath);
+        }
+
+        fs.writeFileSync(path.join(basePath, 'options.json'), JSON.stringify(req.body, null, 2));
+
+        // Handle uploaded file
+        if (!req.file) {
+            return res.status(400).json({ error: 'File is required.' });
+        }
+
+        const filePath = req.file.path;
+        const fileContents = fs.readFileSync(filePath, 'utf-8');
+        const lines = fileContents.split('\n').filter(Boolean);
+
+        const groupedData = groupDataByY(lines);
+        
+        if (Object.keys(groupedData).length > 0) {
+            saveGroupedData(baseName, groupedData, Math.floor(req.body.sizeX / 2), Math.floor(req.body.sizeY / 2));
+        }
+
+        // Clean up tmp upload 
+        fs.unlinkSync(filePath);
+
+        
+        res.json({ message: 'SVG files generated successfully!' });
+
+    } catch(e) {
+        console.error(e)
+        return res.json({ error: e.toString() });
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
